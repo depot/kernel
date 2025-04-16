@@ -58,10 +58,13 @@ jobs:
           echo "KERNEL_SRC=${KERNEL_SRC}" >> $GITHUB_ENV
           echo "KERNEL_SOURCE=$PWD/kernel-build/linux-source" >> $GITHUB_ENV
 
-      - name: Copy config
+      - name: Copy config and update
         run: |
           cp config "$KERNEL_SOURCE/.config"
           echo "Using custom .config file"
+          cd "$KERNEL_SOURCE"
+          make olddefconfig
+          echo "Updated config with defaults for any missing options"
 
       - name: Prepare build environment
         run: |
@@ -85,12 +88,12 @@ jobs:
       # Collect and organize .deb files
       - name: Collect .deb files
         run: |
-          mkdir -p artifacts
+          mkdir -p /artifacts
           # Find all .deb files in the parent directory of the kernel source
-          find "$(dirname "$KERNEL_SOURCE")" -maxdepth 1 -name "*.deb" -exec cp {} artifacts/ \;
+          find "$(dirname "$KERNEL_SOURCE")" -maxdepth 1 -name "*.deb" -exec mv {} /artifacts/ \;
           # Also look one directory up (for deb-pkg output)
-          find "$(dirname "$(dirname "$KERNEL_SOURCE")")" -maxdepth 1 -name "*.deb" -exec cp {} artifacts/ \;
-          ls -la artifacts/
+          find "$(dirname "$(dirname "$KERNEL_SOURCE")")" -maxdepth 1 -name "*.deb" -exec cp {} /artifacts/ \;
+          ls -la /artifacts/
 
       - name: Upload .deb files as artifacts
         uses: actions/upload-artifact@v4
