@@ -37,41 +37,37 @@ jobs:
           sudo sh -c 'echo "deb-src http://archive.ubuntu.com/ubuntu noble main" > /etc/apt/sources.list.d/kernel-source.list'
           sudo sh -c 'echo "deb-src http://archive.ubuntu.com/ubuntu noble-updates main" >> /etc/apt/sources.list.d/kernel-source.list'
           sudo apt-get update
-          sudo apt build-dep -y linux
-          sudo apt-get install -y git build-essential fakeroot libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf llvm bc gcc python3 kmod cpio wget rsync
+          sudo apt build-dep -y linux-aws
+          sudo apt-get install -y git build-essential fakeroot libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf llvm bc gcc python3 kmod cpio wget rsync debhelper-compat
 
       - name: Get kernel source
         if: steps.kernel-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p kernel-build
           cd kernel-build
-          apt-get source linux
+          curl -LO https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/linux-aws/6.8.0-1021.23/linux-aws_6.8.0.orig.tar.gz
+          tar xf linux-aws_6.8.0.orig.tar.gz && rm linux-aws_6.8.0.orig.tar.gz
           KERNEL_SRC=$(find "$PWD" -maxdepth 1 -type d -name "linux-*" | head -1)
           echo "KERNEL_SRC=${KERNEL_SRC}" >> $GITHUB_ENV
           ln -sf "$KERNEL_SRC" "$PWD/linux-source"
           echo "KERNEL_SOURCE=$PWD/linux-source" >> $GITHUB_ENV
 
-      - name: Set kernel source path from cache
-        if: steps.kernel-cache.outputs.cache-hit == 'true'
-        run: |
-          KERNEL_SRC=$(find "$PWD/kernel-build" -maxdepth 1 -type d -name "linux-*" | head -1)
-          echo "KERNEL_SRC=${KERNEL_SRC}" >> $GITHUB_ENV
-          echo "KERNEL_SOURCE=$PWD/kernel-build/linux-source" >> $GITHUB_ENV
-
-      - name: Copy config and update
+      - name: Copy config
         run: |
           cp config "$KERNEL_SOURCE/.config"
           echo "Using custom .config file"
-          cd "$KERNEL_SOURCE"
-          make olddefconfig
-          echo "Updated config with defaults for any missing options"
 
       - name: Prepare build environment
         run: |
+          # check if debian directory exists
+          if [ ! -d "$KERNEL_SOURCE/debian" ]; then
+            mv debian "$KERNEL_SOURCE/debian/"
+          fi
           cd "$KERNEL_SOURCE"
-          chmod a+x debian/rules || true
-          chmod a+x debian/scripts/* || true
-          chmod a+x debian/scripts/misc/* || true
+          chmod a+x debian/rules
+          chmod a+x debian/scripts/*
+          chmod a+x debian/scripts/misc/*
+          make ARCH=x86 mrproper
 
       - name: Set commit hash
         run: |
@@ -82,18 +78,20 @@ jobs:
       - name: Build kernel
         run: |
           cd "$KERNEL_SOURCE"
-          make -j "$(nproc)"
-          make -j "$(nproc)" bindeb-pkg LOCALVERSION=-depot-${{ env.SHORT_COMMIT }}
+          PROCS=$(getconf _NPROCESSORS_ONLN)
+          echo "Building with $PROCS processors"
+          make -j "$PROCS"
+          make deb-pkg LOCALVERSION=-depot-${{ env.SHORT_COMMIT }}
 
       # Collect and organize .deb files
       - name: Collect .deb files
         run: |
-          mkdir -p /artifacts
+          mkdir -p artifacts
           # Find all .deb files in the parent directory of the kernel source
-          find "$(dirname "$KERNEL_SOURCE")" -maxdepth 1 -name "*.deb" -exec mv {} /artifacts/ \;
+          find "$(dirname "$KERNEL_SOURCE")" -maxdepth 1 -name "*.deb" -exec cp {} artifacts/ \;
           # Also look one directory up (for deb-pkg output)
-          find "$(dirname "$(dirname "$KERNEL_SOURCE")")" -maxdepth 1 -name "*.deb" -exec cp {} /artifacts/ \;
-          ls -la /artifacts/
+          find "$(dirname "$(dirname "$KERNEL_SOURCE")")" -maxdepth 1 -name "*.deb" -exec cp {} artifacts/ \;
+          ls -la artifacts/
 
       - name: Upload .deb files as artifacts
         uses: actions/upload-artifact@v4
