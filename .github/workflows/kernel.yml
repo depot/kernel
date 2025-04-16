@@ -67,7 +67,6 @@ jobs:
           chmod a+x debian/rules
           chmod a+x debian/scripts/*
           chmod a+x debian/scripts/misc/*
-          make ARCH=x86 mrproper
 
       - name: Set commit hash
         run: |
@@ -80,8 +79,9 @@ jobs:
           cd "$KERNEL_SOURCE"
           PROCS=$(getconf _NPROCESSORS_ONLN)
           echo "Building with $PROCS processors"
+          make olddefconfig
           make -j "$PROCS"
-          make deb-pkg LOCALVERSION=-depot-${{ env.SHORT_COMMIT }}
+          make bindeb-pkg LOCALVERSION=-depot-${{ env.SHORT_COMMIT }}
 
       # Collect and organize .deb files
       - name: Collect .deb files
