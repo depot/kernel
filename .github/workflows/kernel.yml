@@ -66,9 +66,9 @@ jobs:
       - name: Prepare build environment
         run: |
           cd "$KERNEL_SOURCE"
-          chmod a+x debian/rules
-          chmod a+x debian/scripts/*
-          chmod a+x debian/scripts/misc/*
+          chmod a+x debian/rules || true
+          chmod a+x debian/scripts/* || true
+          chmod a+x debian/scripts/misc/* || true
 
       - name: Set commit hash
         run: |
