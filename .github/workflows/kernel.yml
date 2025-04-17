@@ -71,6 +71,9 @@ jobs:
 
       - name: Prepare build environment
         run: |
+          apt-get source linux-aws
+          rm -rf $KERNEL_SOURCE/scripts/package/debian
+          cp -r linux-meta-aws-*/debian/ $KERNEL_SOURCE/scripts/package/
           export DEB_BUILD_PROFILES='pkg.linux.nokerneldbg pkg.linux.nokerneldbginfo'
           echo "DEB_BUILD_PROFILES=${DEB_BUILD_PROFILES}" >> $GITHUB_ENV
 
@@ -89,7 +92,7 @@ jobs:
           echo "Building with $PROCS processors"
           make olddefconfig
           make -j "$PROCS" CC="sccache gcc"
-          fakeroot ./scripts/package/builddeb
+          ./scripts/package/builddeb
 
       # Collect and organize .deb files
       - name: Collect .deb files
