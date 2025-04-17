@@ -3,6 +3,7 @@ name: Build Ubuntu Kernels and Release
 on:
   push:
     branches:
+      - billy/o3
       - main
 
 jobs:
@@ -84,6 +85,7 @@ jobs:
       - name: Build kernel
         env:
           CC: "sccache gcc"
+          KCFLAGS: "-O3 -march=x86-64-v3"
         run: |
           cd "$KERNEL_SOURCE"
           PROCS=$(getconf _NPROCESSORS_ONLN)
