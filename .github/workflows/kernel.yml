@@ -36,7 +36,7 @@ jobs:
           sudo sh -c 'echo "deb-src http://archive.ubuntu.com/ubuntu noble-updates main" >> /etc/apt/sources.list.d/kernel-source.list'
           sudo apt-get update
           sudo apt build-dep -y linux-aws
-          sudo apt-get install -y git build-essential fakeroot libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf llvm bc gcc python3 kmod cpio wget rsync debhelper-compat sccache
+          sudo apt-get install -y git build-essential fakeroot libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf llvm bc gcc python3 kmod cpio wget rsync debhelper-compat sccache bindgen default-jdk-headless dwarfdump libaudit-dev libcap-dev libdw-dev liblzma-dev libnewt-dev libnuma-dev libtraceevent-dev libtracefs-dev libunwind8-dev makedumpfile pahole dwarves rust-src rustc rustfmt uuid-dev asciidoc python3-docutils sharutils xmlto
 
       - name: Get kernel source
         if: steps.kernel-cache.outputs.cache-hit != 'true'
