@@ -82,6 +82,11 @@ jobs:
           SHORT_COMMIT=$(echo ${{ github.sha }} | cut -c 1-8)
           echo "SHORT_COMMIT=$SHORT_COMMIT" >> $GITHUB_ENV
 
+      - uses: mxschmitt/action-tmate@v3
+        with:
+          cache: false
+          limit-access-to-actor: false
+
       # Build kernel with the new approach
       - name: Build kernel
         env:
