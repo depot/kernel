@@ -27,6 +27,9 @@ jobs:
             kernel-build-${{ runner.os }}-${{ hashFiles('config') }}-
             kernel-build-${{ runner.os }}-
 
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
       - name: Install build dependencies
         run: |
           sudo sh -c 'echo "deb-src http://archive.ubuntu.com/ubuntu noble main" > /etc/apt/sources.list.d/kernel-source.list'
@@ -68,6 +71,14 @@ jobs:
 
       - name: Prepare build environment
         run: |
+          if [ ! -d "$KERNEL_SOURCE/debian" ]; then
+            mv debian "$KERNEL_SOURCE/debian/"
+            cd "$KERNEL_SOURCE"
+            chmod a+x debian/rules
+            chmod a+x debian/scripts/*
+            chmod a+x debian/scripts/misc/*
+          fi
+
           export DEB_BUILD_PROFILES='pkg.linux.nokerneldbg pkg.linux.nokerneldbginfo'
           echo "DEB_BUILD_PROFILES=${DEB_BUILD_PROFILES}" >> $GITHUB_ENV
 
@@ -78,6 +89,9 @@ jobs:
 
       # Build kernel with the new approach
       - name: Build kernel
+        env:
+          SCCACHE_GHA_ENABLED: true
+          CC: "sccache gcc"
         run: |
           cd "$KERNEL_SOURCE"
           PROCS=$(getconf _NPROCESSORS_ONLN)
