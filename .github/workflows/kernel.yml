@@ -72,8 +72,7 @@ jobs:
       - name: Prepare build environment
         run: |
           apt-get source linux-aws
-          rm -rf $KERNEL_SOURCE/scripts/package/debian
-          cp -r linux-meta-aws-*/debian/ $KERNEL_SOURCE/scripts/package/
+          cp -r linux-meta-aws-*/debian/ $KERNEL_SOURCE/
           export DEB_BUILD_PROFILES='pkg.linux.nokerneldbg pkg.linux.nokerneldbginfo'
           echo "DEB_BUILD_PROFILES=${DEB_BUILD_PROFILES}" >> $GITHUB_ENV
 
@@ -81,11 +80,6 @@ jobs:
         run: |
           SHORT_COMMIT=$(echo ${{ github.sha }} | cut -c 1-8)
           echo "SHORT_COMMIT=$SHORT_COMMIT" >> $GITHUB_ENV
-
-      - uses: mxschmitt/action-tmate@v3
-        with:
-          cache: false
-          limit-access-to-actor: false
 
       # Build kernel with the new approach
       - name: Build kernel
@@ -97,7 +91,7 @@ jobs:
           echo "Building with $PROCS processors"
           make olddefconfig
           make -j "$PROCS" CC="sccache gcc"
-          ./scripts/package/builddeb
+          fakeroot debian/rules binary-headers binary-generic binary-perarch
 
       # Collect and organize .deb files
       - name: Collect .deb files
