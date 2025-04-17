@@ -52,7 +52,7 @@ jobs:
             # Download the kernel tarball with version in the filename
             curl -L "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/linux-aws/${KERNEL_VERSION}/linux-aws_6.8.0.orig.tar.gz" -o ${KERNEL_VERSION}.tar.gz
             # Extract that specific tarball
-            tar xvf ${KERNEL_VERSION}.tar.gz
+            tar xf ${KERNEL_VERSION}.tar.gz
           fi
 
           # Find the directory extracted from that specific tarball
@@ -68,14 +68,8 @@ jobs:
 
       - name: Prepare build environment
         run: |
-          # check if debian directory exists
-          if [ ! -d "$KERNEL_SOURCE/debian" ]; then
-            mv debian "$KERNEL_SOURCE/debian/"
-            cd "$KERNEL_SOURCE"
-            chmod a+x debian/rules
-            chmod a+x debian/scripts/*
-            chmod a+x debian/scripts/misc/*
-          fi
+          export DEB_BUILD_PROFILES='pkg.linux.nokerneldbg pkg.linux.nokerneldbginfo'
+          echo "DEB_BUILD_PROFILES=${DEB_BUILD_PROFILES}" >> $GITHUB_ENV
 
       - name: Set commit hash
         run: |
@@ -90,7 +84,7 @@ jobs:
           echo "Building with $PROCS processors"
           make olddefconfig
           make -j "$PROCS" CC="sccache gcc"
-          make bindeb-pkg LOCALVERSION=-depot-${{ env.SHORT_COMMIT }} CC="sccache gcc"
+          dpkg-buildpackage -b -nc -uc
 
       # Collect and organize .deb files
       - name: Collect .deb files
