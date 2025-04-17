@@ -36,7 +36,7 @@ jobs:
           sudo sh -c 'echo "deb-src http://archive.ubuntu.com/ubuntu noble-updates main" >> /etc/apt/sources.list.d/kernel-source.list'
           sudo apt-get update
           sudo apt build-dep -y linux-aws
-          sudo apt-get install -y git build-essential fakeroot libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf llvm bc gcc python3 kmod cpio wget rsync debhelper-compat sccache bindgen default-jdk-headless dwarfdump libaudit-dev libcap-dev libdw-dev liblzma-dev libnewt-dev libnuma-dev libtraceevent-dev libtracefs-dev libunwind8-dev makedumpfile pahole dwarves rust-src rustc rustfmt uuid-dev asciidoc python3-docutils sharutils xmlto
+          sudo apt-get install -y git build-essential fakeroot libncurses-dev gawk flex bison openssl libssl-dev dkms libelf-dev libudev-dev libpci-dev libiberty-dev autoconf llvm bc gcc python3 kmod cpio wget rsync debhelper-compat sccache bindgen default-jdk-headless dwarfdump libaudit-dev libcap-dev libdw-dev liblzma-dev libnewt-dev libnuma-dev libtraceevent-dev libtracefs-dev libunwind8-dev makedumpfile pahole dwarves rust-src rustc rustfmt uuid-dev asciidoc python3-docutils sharutils xmlto bindgen
 
       - name: Get kernel source
         if: steps.kernel-cache.outputs.cache-hit != 'true'
@@ -71,14 +71,6 @@ jobs:
 
       - name: Prepare build environment
         run: |
-          if [ ! -d "$KERNEL_SOURCE/debian" ]; then
-            mv debian "$KERNEL_SOURCE/debian/"
-            cd "$KERNEL_SOURCE"
-            chmod a+x debian/rules
-            chmod a+x debian/scripts/*
-            chmod a+x debian/scripts/misc/*
-          fi
-
           export DEB_BUILD_PROFILES='pkg.linux.nokerneldbg pkg.linux.nokerneldbginfo'
           echo "DEB_BUILD_PROFILES=${DEB_BUILD_PROFILES}" >> $GITHUB_ENV
 
@@ -90,7 +82,6 @@ jobs:
       # Build kernel with the new approach
       - name: Build kernel
         env:
-          SCCACHE_GHA_ENABLED: true
           CC: "sccache gcc"
         run: |
           cd "$KERNEL_SOURCE"
@@ -98,7 +89,7 @@ jobs:
           echo "Building with $PROCS processors"
           make olddefconfig
           make -j "$PROCS" CC="sccache gcc"
-          dpkg-buildpackage -b -nc -uc
+          fakeroot ./scripts/package/builddeb
 
       # Collect and organize .deb files
       - name: Collect .deb files
@@ -126,7 +117,7 @@ jobs:
         with:
           tag_name: kernel-${{ github.sha }}
           name: Ubuntu Kernel Build ${{ github.sha }}
-          files: artifacts/*.deb
+          files: artifacts/*.tar.zst
           draft: false
           prerelease: false
           generate_release_notes: true
