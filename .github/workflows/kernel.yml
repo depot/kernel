@@ -38,18 +38,24 @@ jobs:
       - name: Get kernel source
         if: steps.kernel-cache.outputs.cache-hit != 'true'
         run: |
-          mkdir -p kernel-build
-          cd kernel-build
+          # Export KERNEL_VERSION environment variable
+          KERNEL_VERSION="6.8.0-1021.23"
+
+          # Create directory with kernel version appended
+          mkdir -p kernel-build-${KERNEL_VERSION}
+          cd kernel-build-${KERNEL_VERSION}
+
           # Check if the kernel source directory already exists
-          if [ -d "kernel-build" ]; then
+          if [ -d "linux-source" ]; then
             echo "Kernel source directory already exists, skipping download."
           else
-            # Create the kernel source directory
-            mkdir -p kernel-build
-            cd kernel-build
-            curl -LO https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/linux-aws/6.8.0-1021.23/linux-aws_6.8.0.orig.tar.gz
-            tar xvf linux-aws_6.8.0.orig.tar.gz
+            # Download the kernel tarball with version in the filename
+            curl -L "https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/linux-aws/${KERNEL_VERSION}/linux-aws_6.8.0.orig.tar.gz" -o ${KERNEL_VERSION}.tar.gz
+            # Extract that specific tarball
+            tar xvf ${KERNEL_VERSION}.tar.gz
           fi
+
+          # Find the directory extracted from that specific tarball
           KERNEL_SRC=$(find "$PWD" -maxdepth 1 -type d -name "linux-*" | head -1)
           echo "KERNEL_SRC=${KERNEL_SRC}" >> $GITHUB_ENV
           ln -sf "$KERNEL_SRC" "$PWD/linux-source"
