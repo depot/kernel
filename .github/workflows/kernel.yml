@@ -40,8 +40,16 @@ jobs:
         run: |
           mkdir -p kernel-build
           cd kernel-build
-          curl -LO https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/linux-aws/6.8.0-1021.23/linux-aws_6.8.0.orig.tar.gz
-          tar xf linux-aws_6.8.0.orig.tar.gz && rm linux-aws_6.8.0.orig.tar.gz
+          # Check if the kernel source directory already exists
+          if [ -d "kernel-build" ]; then
+            echo "Kernel source directory already exists, skipping download."
+          else
+            # Create the kernel source directory
+            mkdir -p kernel-build
+            cd kernel-build
+            curl -LO https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/linux-aws/6.8.0-1021.23/linux-aws_6.8.0.orig.tar.gz
+            tar xvf linux-aws_6.8.0.orig.tar.gz
+          fi
           KERNEL_SRC=$(find "$PWD" -maxdepth 1 -type d -name "linux-*" | head -1)
           echo "KERNEL_SRC=${KERNEL_SRC}" >> $GITHUB_ENV
           ln -sf "$KERNEL_SRC" "$PWD/linux-source"
