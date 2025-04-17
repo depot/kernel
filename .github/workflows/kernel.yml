@@ -39,7 +39,7 @@ jobs:
         if: steps.kernel-cache.outputs.cache-hit != 'true'
         run: |
           # Export KERNEL_VERSION environment variable
-          KERNEL_VERSION="6.8.0-1021.23"
+          KERNEL_VERSION="6.8.0-1027.29"
 
           # Create directory with kernel version appended
           mkdir -p kernel-build-${KERNEL_VERSION}
