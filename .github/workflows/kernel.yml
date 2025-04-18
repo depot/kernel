@@ -85,6 +85,9 @@ jobs:
         env:
           CC: "sccache gcc"
         run: |
+          export KDEB_PKGVERSION="$(make kernelversion)-depot-$SHORT_COMMIT"
+          export LOCALVERSION="-depot-$SHORT_COMMIT"
+
           cd "$KERNEL_SOURCE"
           PROCS=$(getconf _NPROCESSORS_ONLN)
           echo "Building with $PROCS processors"
