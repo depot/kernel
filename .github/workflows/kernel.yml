@@ -87,6 +87,9 @@ jobs:
           CC: "sccache gcc"
           KCFLAGS: "-O3 -march=x86-64-v3"
         run: |
+          export KDEB_PKGVERSION="$(make kernelversion)-depot-$SHORT_COMMIT"
+          export LOCALVERSION="-depot-$SHORT_COMMIT"
+
           cd "$KERNEL_SOURCE"
           PROCS=$(getconf _NPROCESSORS_ONLN)
           echo "Building with $PROCS processors"
